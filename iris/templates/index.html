@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PyTorch tabanlı yapay zeka ile Iris çiçeği sınıflandırma aracı.">
+    <title>Iris Çiçeği Sınıflandırıcı | AI Powered</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6ee7b7;
+            --primary-dark: #059669;
+            --primary-light: #a7f3d0;
+            --accent: #f472b6;
+            --accent2: #38bdf8;
+            --success: #34d399;
+            --error: #f87171;
+            --bg: #0a1628;
+            --bg2: #0f1f3a;
+            --surface: rgba(255,255,255,0.04);
+            --surface-hover: rgba(255,255,255,0.07);
+            --border: rgba(110,231,183,0.2);
+            --border-focus: rgba(110,231,183,0.6);
+            --text: #f0fdf4;
+            --text-muted: #94a3b8;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow-glow: 0 0 40px rgba(110,231,183,0.12);
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 24px;
+            overflow-x: hidden;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(5,150,105,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(244,114,182,0.10) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 60% 20%, rgba(56,189,248,0.08) 0%, transparent 60%);
+            pointer-events: none; z-index: 0;
+        }
+        .orb { position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.25; pointer-events: none; z-index: 0; animation: floatOrb 12s ease-in-out infinite; }
+        .orb-1 { width: 400px; height: 400px; background: var(--primary-dark); top: -100px; left: -100px; }
+        .orb-2 { width: 300px; height: 300px; background: var(--accent); bottom: -80px; right: -80px; animation-delay: 4s; }
+        .orb-3 { width: 200px; height: 200px; background: var(--accent2); top: 50%; left: 50%; animation-delay: 8s; }
+        @keyframes floatOrb {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(20px, -30px) scale(1.05); }
+            66% { transform: translate(-15px, 20px) scale(0.95); }
+        }
+        .card {
+            position: relative; z-index: 1;
+            width: 100%; max-width: 640px;
+            background: rgba(15, 31, 58, 0.75);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 48px 52px;
+            box-shadow: 0 32px 64px rgba(0,0,0,0.5), var(--shadow-glow), inset 0 1px 0 rgba(255,255,255,0.06);
+            animation: slideUp 0.6s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(32px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .header { text-align: center; margin-bottom: 40px; }
+        .flower-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 72px; height: 72px;
+            background: linear-gradient(135deg, var(--primary-dark), #10b981);
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(5,150,105,0.4);
+            animation: pulse 3s ease-in-out infinite;
+            font-size: 36px;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 8px 32px rgba(5,150,105,0.4); transform: scale(1); }
+            50%       { box-shadow: 0 8px 48px rgba(5,150,105,0.65); transform: scale(1.04); }
+        }
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2rem; font-weight: 700;
+            background: linear-gradient(135deg, #d1fae5 0%, var(--primary) 40%, var(--accent2) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            line-height: 1.2; margin-bottom: 10px;
+        }
+        .subtitle { color: var(--text-muted); font-size: 0.92rem; font-weight: 400; }
+        .section-label {
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.12em; color: var(--primary);
+            margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
+        }
+        .section-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+        .form-section { margin-bottom: 28px; }
+        .grid { display: grid; gap: 16px; }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .field { display: flex; flex-direction: column; gap: 8px; }
+        label {
+            font-size: 0.82rem; font-weight: 600; color: var(--primary-light);
+            display: flex; align-items: center; gap: 6px;
+        }
+        input[type="number"] {
+            width: 100%; padding: 12px 16px;
+            background: var(--surface); border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm); color: var(--text);
+            font-family: 'Inter', sans-serif; font-size: 0.9rem;
+            transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+            outline: none; -webkit-appearance: none; appearance: none;
+        }
+        input[type="number"]:focus {
+            border-color: var(--border-focus);
+            background: rgba(110,231,183,0.06);
+            box-shadow: 0 0 0 3px rgba(110,231,183,0.12);
+        }
+        input[type="number"]:hover { border-color: rgba(110,231,183,0.4); background: var(--surface-hover); }
+        input::placeholder { color: #4b5563; }
+        .btn-predict {
+            width: 100%; padding: 16px; margin-top: 8px;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #10b981 50%, var(--accent2) 100%);
+            background-size: 200% 200%;
+            border: none; border-radius: var(--radius);
+            color: #fff; font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem; font-weight: 700; letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 32px rgba(5,150,105,0.45);
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            animation: gradientShift 4s ease infinite;
+        }
+        @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .btn-predict:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(5,150,105,0.6); }
+        .btn-predict:active { transform: translateY(0); }
+        .btn-predict:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-predict svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Result */
+        #result { display: none; margin-top: 28px; border-radius: var(--radius); padding: 28px 32px; text-align: center; animation: fadeIn 0.5s ease; position: relative; overflow: hidden; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        #result.success { background: linear-gradient(135deg, rgba(52,211,153,0.1), rgba(16,185,129,0.05)); border: 1.5px solid rgba(52,211,153,0.35); box-shadow: 0 0 40px rgba(52,211,153,0.1); }
+        #result.error { background: linear-gradient(135deg, rgba(248,113,113,0.1), rgba(239,68,68,0.05)); border: 1.5px solid rgba(248,113,113,0.35); }
+        #result::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent); animation: shimmer 2.5s infinite; }
+        @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+        .result-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--success); margin-bottom: 8px; }
+        .result-label.err { color: var(--error); }
+        .result-class { font-family: 'Space Grotesk', sans-serif; font-size: 2.4rem; font-weight: 800; background: linear-gradient(135deg, var(--success), #6ee7b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin-bottom: 6px; }
+        .result-confidence { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; }
+        .result-error-msg { font-size: 0.95rem; color: var(--error); font-weight: 500; }
+
+        /* Probability bars */
+        .prob-bars { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+        .prob-item { display: flex; align-items: center; gap: 12px; }
+        .prob-name { font-size: 0.82rem; font-weight: 600; color: var(--text); width: 80px; text-align: right; }
+        .prob-bar-bg { flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 5px; overflow: hidden; }
+        .prob-bar-fill { height: 100%; border-radius: 5px; transition: width 0.8s cubic-bezier(0.16,1,0.3,1); }
+        .prob-bar-fill.setosa { background: linear-gradient(90deg, #34d399, #6ee7b7); }
+        .prob-bar-fill.versicolor { background: linear-gradient(90deg, #38bdf8, #7dd3fc); }
+        .prob-bar-fill.virginica { background: linear-gradient(90deg, #a78bfa, #c4b5fd); }
+        .prob-pct { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); width: 50px; }
+
+        /* Flower emojis */
+        .flower-emoji { font-size: 48px; margin-bottom: 12px; }
+
+        @media (max-width: 640px) {
+            .card { padding: 32px 24px; }
+            h1 { font-size: 1.5rem; }
+            .grid-2 { grid-template-columns: 1fr; }
+            .result-class { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <main class="card" role="main">
+        <div class="header">
+            <div class="flower-icon" aria-hidden="true">🌸</div>
+            <h1>Iris Çiçeği Sınıflandırıcı</h1>
+            <p class="subtitle">Çiçeğin özelliklerini girin, yapay zeka türünü tahmin etsin</p>
+        </div>
+
+        <form id="predictionForm" novalidate>
+            <div class="form-section">
+                <div class="section-label">Sepal (Çanak Yaprak)</div>
+                <div class="grid grid-2">
+                    <div class="field">
+                        <label for="sepal_length">Uzunluk (cm)</label>
+                        <input type="number" id="sepal_length" step="0.1" min="0.1" max="10" placeholder="ör. 5.1" required>
+                    </div>
+                    <div class="field">
+                        <label for="sepal_width">Genişlik (cm)</label>
+                        <input type="number" id="sepal_width" step="0.1" min="0.1" max="6" placeholder="ör. 3.5" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-label">Petal (Taç Yaprak)</div>
+                <div class="grid grid-2">
+                    <div class="field">
+                        <label for="petal_length">Uzunluk (cm)</label>
+                        <input type="number" id="petal_length" step="0.1" min="0.1" max="8" placeholder="ör. 1.4" required>
+                    </div>
+                    <div class="field">
+                        <label for="petal_width">Genişlik (cm)</label>
+                        <input type="number" id="petal_width" step="0.1" min="0.1" max="3" placeholder="ör. 0.2" required>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-predict" id="submitBtn">
+                <span id="btnSpinner" class="spinner"></span>
+                <svg id="btnIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                <span id="btnText">Sınıflandır</span>
+            </button>
+        </form>
+
+        <div id="result" role="alert" aria-live="polite"></div>
+    </main>
+
+    <script>
+        const form = document.getElementById('predictionForm');
+        const resultBox = document.getElementById('result');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const btnIcon = document.getElementById('btnIcon');
+        const btnText = document.getElementById('btnText');
+
+        const FLOWER_EMOJIS = { Setosa: '🌼', Versicolor: '🌺', Virginica: '🌷' };
+
+        function setLoading(loading) {
+            submitBtn.disabled = loading;
+            btnSpinner.style.display = loading ? 'block' : 'none';
+            btnIcon.style.display = loading ? 'none' : 'block';
+            btnText.textContent = loading ? 'Tahmin ediliyor...' : 'Sınıflandır';
+        }
+
+        function showSuccess(data) {
+            const emoji = FLOWER_EMOJIS[data.predicted_class] || '🌸';
+            const probs = data.probabilities;
+            let barsHTML = '';
+            for (const [name, pct] of Object.entries(probs)) {
+                const cls = name.toLowerCase();
+                barsHTML += `
+                    <div class="prob-item">
+                        <span class="prob-name">${name}</span>
+                        <div class="prob-bar-bg"><div class="prob-bar-fill ${cls}" style="width: ${pct}%"></div></div>
+                        <span class="prob-pct">${pct}%</span>
+                    </div>`;
+            }
+            resultBox.className = 'success';
+            resultBox.innerHTML = `
+                <div class="flower-emoji">${emoji}</div>
+                <div class="result-label">✦ Tahmin Sonucu</div>
+                <div class="result-class">Iris ${data.predicted_class}</div>
+                <div class="result-confidence">Güven: %${data.confidence}</div>
+                <div class="prob-bars">${barsHTML}</div>`;
+            resultBox.style.display = 'block';
+            resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showError(message) {
+            resultBox.className = 'error';
+            resultBox.innerHTML = `
+                <div class="result-label err">⚠ Tahmin Başarısız</div>
+                <div class="result-error-msg">${message}</div>`;
+            resultBox.style.display = 'block';
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const sl = parseFloat(document.getElementById('sepal_length').value);
+            const sw = parseFloat(document.getElementById('sepal_width').value);
+            const pl = parseFloat(document.getElementById('petal_length').value);
+            const pw = parseFloat(document.getElementById('petal_width').value);
+
+            if ([sl, sw, pl, pw].some(v => isNaN(v) || v <= 0)) {
+                showError('Lütfen tüm alanları geçerli pozitif değerlerle doldurun.');
+                return;
+            }
+
+            const payload = { sepal_length: sl, sepal_width: sw, petal_length: pl, petal_width: pw };
+            setLoading(true);
+            resultBox.style.display = 'none';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    showError(data.detail || 'Beklenmeyen bir hata oluştu.');
+                } else {
+                    showSuccess(data);
+                }
+            } catch (err) {
+                console.error('Ağ hatası:', err);
+                showError('Sunucuya bağlanılamadı. Lütfen bağlantınızı kontrol edin.');
+            } finally {
+                setLoading(false);
+            }
+        });
+    </script>
+</body>
+</html>
